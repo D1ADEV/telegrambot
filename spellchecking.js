@@ -42,26 +42,6 @@ var _check = function(original, cb) {
     });
 };
 
-var _checkSpelling = function(str, cb) {
-    var res = 'https://bingapis.azure-api.net/api/v5/spellcheck?mode=spell';
-    var data = {
-        Text: str
-    };
-    var formData = querystring.stringify(data);
-    var reqHeaders = {
-        'Ocp-Apim-Subscription-Key': bingkey,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': formData.length
-    };
-    request(res, {
-        method: "POST",
-        headers: reqHeaders,
-        form: formData,
-    }, function(err, res, body) {
-        cb(body);
-    })
-};
-
 var _parseResponse = function(originalString, serverString, cb) {
     var serverResponse = JSON.parse(serverString);
     var toSend = originalString;
