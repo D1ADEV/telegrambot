@@ -1,2 +1,5 @@
 var bot = require("./bot.js").BOT;
-bot.start();
+var fs = require('fs');
+
+var token = fs.readFileSync("token.txt").toString();
+bot.start(token);

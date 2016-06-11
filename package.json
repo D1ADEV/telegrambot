@@ -1,0 +1,23 @@
+{
+  "name": "telegrambot",
+  "version": "1.0.0",
+  "description": "A telegram bot",
+  "main": "build/output.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/D1ADEV/telegrambot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/D1ADEV/telegrambot/issues"
+  },
+  "homepage": "https://github.com/D1ADEV/telegrambot#readme",
+  "dependencies": {
+    "request": "^2.72.0",
+    "telegram-node-bot": "^2.1.3"
+  }
+}
