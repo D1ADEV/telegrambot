@@ -8,13 +8,13 @@ var _authorizedWords = [
     "memes",
     "meme",
     "pepe",
-    "pepes"
+    "pepes",
+    "tho"
 ];
 
 var _check = function(original, cb) {
     var str = original;
     yaspeller.checkText(str, function(err, resp) {
-        console.log(resp);
         for (var i = 0; i < resp.length; i++) {
             if (resp[i].s[0] != undefined && _authorizedWords.indexOf(resp[i].word.toLowerCase()) == -1) {
                 if (resp[i].s.length == 1) {
