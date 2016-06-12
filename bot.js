@@ -1,8 +1,10 @@
+"use strict";
 var tgapi = require("telegram-node-bot");
 var spelling = require('./spellchecking.js').SPELLCHECKER;
 var talker = require('./talking.js').TALKER;
 var foss = require('./foss.js').FOSS;
 var database = require('./database.js').DATABASE;
+var harold = require('./harold.js').HAROLD;
 
 var isSaving = false;
 
@@ -61,7 +63,34 @@ var _bot = {
             .when('/save', 'SaveController')
             .when('/reload', 'ReloadController')
             .when('/stats', 'StatsController')
+            .when('/authorize :str', 'AuthController')
+            .when(['harold', 'Harold'], 'HaroldController')
             .otherwise('SpellingController');
+
+        tg.controller('HaroldController', ($) => {
+            var message = harold.getMessage($.message.text);
+            if (message !== false) {
+                $.sendMessage(harold.getMessage($.message.text) + "\nFTFY", {
+                    reply_to_message_id: $.message.message_id
+                });
+            }
+        });
+
+        tg.controller('AuthController', ($) => {
+            on_request($.message);
+            tg.for("/authorize :str", ($) => {
+                var resp = database.addWord($.query.str);
+                if (resp == true) {
+                    $.sendMessage($.query.str + " added to the list of authorized words", {
+                        reply_to_message_id: $.message.message_id
+                    });
+                } else {
+                    $.sendMessage($.query.str + " is already in the list", {
+                        reply_to_message_id: $.message.message_id
+                    });
+                }
+            });
+        });
 
         tg.controller('DesuController', ($) => {
             if (!on_request($.message)) {
@@ -106,6 +135,7 @@ var _bot = {
         });
 
         tg.controller('EnemyController', ($) => {
+            on_request($.message);
             tg.for("/enemy :str", ($) => {
                 if ($.query.str == "add") {
                     $.sendMessage(database.addEnemy($.message.from.id), {
@@ -149,6 +179,7 @@ var _bot = {
                     if ($.message.text.split(" ").length >= 3) {
                         spelling.check($.message.text, function(resp) {
                             if (resp.toLowerCase() !== $.message.text.toLowerCase()) {
+                                database.addTypo($.message.from.id);
                                 console.log("Correcting an asshole");
                                 $.sendMessage(
                                     " Did you mean : " +
@@ -169,7 +200,7 @@ var _bot = {
                                     }
                                 });
                                 setTimeout(function() {
-                                    /* 
+                                    /*
                                         If tg.waitingCallbacks isn't cleaned, the next message of the 
                                         user will not be spell checked. Cleaning it after 5 secs seems to be ok. 
                                     */

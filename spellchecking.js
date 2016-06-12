@@ -1,3 +1,4 @@
+"use strict";
 var request = require('request');
 var yaspeller = require('yaspeller');
 var lev = require('levenshtein');
@@ -10,7 +11,7 @@ var _authorizedWords = [
     "pepe",
     "pepes",
     "tho"
-];
+];  
 
 var _check = function(original, cb) {
     var str = original;
