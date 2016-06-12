@@ -76,6 +76,9 @@ var _database = {
         } else {
             return "Already in the list";
         }
+    },
+    getAuthorizedWords: function(){
+        return database.authorizedWords;
     }
 }
 exports.DATABASE = _database;

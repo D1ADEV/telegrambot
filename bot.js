@@ -186,7 +186,7 @@ var _bot = {
             if (!on_request($.message)) {
                 if ($.message.text != undefined) {
                     if ($.message.text.split(" ").length >= 3) {
-                        spelling.check($.message.text, function(resp) {
+                        spelling.check($.message.text, database.getAuthorizedWords(), function(resp) {
                             if (resp.toLowerCase() !== $.message.text.toLowerCase()) {
                                 database.addTypo($.message.from.id);
                                 console.log("Correcting an asshole");
