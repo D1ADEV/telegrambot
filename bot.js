@@ -5,6 +5,10 @@ var talker = require('./talking.js').TALKER;
 var foss = require('./foss.js').FOSS;
 var database = require('./database.js').DATABASE;
 var harold = require('./harold.js').HAROLD;
+process.on('uncaughtException', function (err) {
+  console.log("UNCAUGHT OMG WE ALL GONNA DIE");
+  console.error(err);
+});
 
 var isSaving = false;
 
@@ -16,7 +20,7 @@ var _displayMessage = function(message) {
         msg += "CMD | ";
     }
     msg += message.from.id;
-    msg += " - ";
+    msg += " | ";
     msg += message.from.username;
     msg += " | ";
     msg += message.text;
@@ -64,15 +68,18 @@ var _bot = {
             .when('/reload', 'ReloadController')
             .when('/stats', 'StatsController')
             .when('/authorize :str', 'AuthController')
-            .when(['harold', 'Harold'], 'HaroldController')
+            .when(['harold'], 'HaroldController')
             .otherwise('SpellingController');
 
+
         tg.controller('HaroldController', ($) => {
-            var message = harold.getMessage($.message.text);
-            if (message !== false) {
-                $.sendMessage(harold.getMessage($.message.text) + "\nFTFY", {
-                    reply_to_message_id: $.message.message_id
-                });
+            if (!on_request($.message)) {
+                var message = harold.getMessage($.message.text);
+                if (message !== false && message !== undefined) {
+                    $.sendMessage(message + "\nFTFY", {
+                        reply_to_message_id: $.message.message_id
+                    });
+                }
             }
         });
 
@@ -85,10 +92,12 @@ var _bot = {
                         reply_to_message_id: $.message.message_id
                     });
                 } else {
-                    $.sendMessage($.query.str + " is already in the list", {
+                    $.sendMessage("Couldn't add " + $.query.str + " (Aready in the list / not valid)", {
                         reply_to_message_id: $.message.message_id
                     });
                 }
+
+
             });
         });
 
