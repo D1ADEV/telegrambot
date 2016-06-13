@@ -1,13 +1,15 @@
 "use strict";
 var tgapi = require("telegram-node-bot");
+var fd = require("node-football-data");
 var spelling = require('./spellchecking.js').SPELLCHECKER;
 var talker = require('./talking.js').TALKER;
 var foss = require('./foss.js').FOSS;
 var database = require('./database.js').DATABASE;
 var harold = require('./harold.js').HAROLD;
-process.on('uncaughtException', function (err) {
-  console.log("UNCAUGHT OMG WE ALL GONNA DIE");
-  console.error(err);
+var football = require('./football.js').FOOTBALL;
+process.on('uncaughtException', function(err) {
+    console.log("UNCAUGHT OMG WE ALL GONNA DIE");
+    console.error(err);
 });
 
 var isSaving = false;
@@ -52,8 +54,9 @@ var on_request = function(message, debug) {
 }
 
 var _bot = {
-    start: function(token) {
+    start: function(token, ftoken) {
         var tg = tgapi(token);
+        var fb = fd(ftoken);
         console.log('Starting...');
         database.reloadFromFile();
         database.printStatus();
@@ -69,18 +72,81 @@ var _bot = {
             .when('/stats', 'StatsController')
             .when('/authorize :str', 'AuthController')
             .when(['harold'], 'HaroldController')
-            .otherwise('SpellingController');
+            .when(['/foot :option',
+                '/foot',
+                '/foot :option :opt',
+                '/foot@isthisavailablebot :option',
+                '/foot@isthisavailablebot :option :opt'
+            ], 'FootController');
+        //.otherwise('SpellingController');
 
+        tg.inlineMode(($) => {
+            console.log("INLINE");
+            console.log($);
+            if($.query === "foot"){
+                console.log("fooooot");
+                tg.answerInlineQuery($.id, [{
+                    message_text: "dejidei"
+                }]);
+            }
+        });
 
         tg.controller('HaroldController', ($) => {
             if (!on_request($.message)) {
                 var message = harold.getMessage($.message.text);
                 if (message !== false && message !== undefined) {
                     $.sendMessage(message + "\nFTFY", {
-                        reply_to_message_id: $.message.message_id
+                        reply_to_message_id: $.message.message_id,
                     });
                 }
             }
+        });
+
+        tg.controller('FootController', ($) => {
+            on_request($.message);
+            tg.for('/foot :option', ($) => {
+                fb.getLeagugeFixtures(424).then(function(res) {
+                    $.sendMessage(football.getMessage(res, $.query.option), {
+                        parse_mode: "html"
+                    });
+                }).catch(function(err) {
+                    console.log(err);
+                });
+            });
+            tg.for('/foot :option :opt', ($) => {
+                on_request($.message);
+                fb.getLeagugeFixtures(424).then(function(res) {
+                    $.sendMessage(football.getMessage(res, $.query.option, $.query.opt), {
+                        parse_mode: "html"
+                    });
+                });
+            });
+            tg.for('/foot@isthisavailablebot :option', ($) => {
+                on_request($.message);
+                fb.getLeagugeFixtures(424).then(function(res) {
+                    $.sendMessage(football.getMessage(res, $.query.option), {
+                        parse_mode: "html"
+                    });
+                }).catch(function(err) {
+                    console.log(err);
+                });
+            });
+            tg.for('/foot@isthisavailablebot :option :opt', ($) => {
+                on_request($.message);
+                fb.getLeagugeFixtures(424).then(function(res) {
+                    $.sendMessage(football.getMessage(res, $.query.option, $.query.opt), {
+                        parse_mode: "html"
+                    });
+                });
+            });
+            tg.for('/foot', ($) => {
+                on_request($.message);
+                var toReturn = "";
+                toReturn += "/foot all - All played matches\n";
+                toReturn += "/foot country <Country> - All matches <Country> played / will play."
+                toReturn += "/foot upcoming <number> - All matches that will be played in <number> days\n";
+                $.sendMessage(toReturn);
+            });
         });
 
         tg.controller('AuthController', ($) => {
