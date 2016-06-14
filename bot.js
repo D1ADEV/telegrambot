@@ -144,7 +144,8 @@ var _bot = {
                 var toReturn = "";
                 toReturn += "/foot all - All played matches\n";
                 toReturn += "/foot country <Country> - All matches <Country> played / will play."
-                toReturn += "/foot upcoming <number> - All matches that will be played in <number> days\n";
+                toReturn += "/foot upcoming <number> or <country> - All matches that will be played in <number> days or by <country>\n";
+                toReturn += "/foot playing - Ongoing matches";
                 $.sendMessage(toReturn);
             });
         });
