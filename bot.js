@@ -7,12 +7,17 @@ var foss = require('./foss.js').FOSS;
 var database = require('./database.js').DATABASE;
 var harold = require('./harold.js').HAROLD;
 var football = require('./football.js').FOOTBALL;
+var custom = require('./customedit.js').TG;
 process.on('uncaughtException', function(err) {
     console.log("UNCAUGHT OMG WE ALL GONNA DIE");
     console.error(err);
 });
 
 var isSaving = false;
+var fixtures = {
+    lastUpdated: -1,
+    data: {}
+};
 
 var _displayMessage = function(message) {
     var msg = "";
@@ -28,6 +33,27 @@ var _displayMessage = function(message) {
     msg += message.text;
     console.log(msg);
 
+}
+
+var updateFixtures = function(f, force, callback) {
+    if (fixtures.lastUpdated === -1 || force === true) {
+        console.log("updating");
+        f.getLeagugeFixtures(424).then(function(res) {
+            fixtures.data = res;
+            fixtures.lastUpdated = Date.now();
+            callback();
+        });
+    } else {
+        if (fixtures.lastUpdated - Date.now() < 120 * 1000) {
+            console.log("Not updating now");
+            callback();
+        } else {
+            console.log("forcing");
+            updateFixtures(f, true, function() {
+                callback();
+            });
+        }
+    }
 }
 
 var on_request = function(message, debug) {
@@ -53,10 +79,13 @@ var on_request = function(message, debug) {
     return database.isEnemy(message.from.id)
 }
 
+
+
 var _bot = {
     start: function(token, ftoken) {
         var tg = tgapi(token);
         var fb = fd(ftoken);
+        custom.init(token);
         console.log('Starting...');
         database.reloadFromFile();
         database.printStatus();
@@ -81,14 +110,68 @@ var _bot = {
         //.otherwise('SpellingController');
 
         tg.inlineMode(($) => {
-            console.log("INLINE");
-            console.log($);
-            if($.query === "foot"){
-                console.log("fooooot");
-                tg.answerInlineQuery($.id, [{
-                    message_text: "dejidei"
-                }]);
+            if ($.query.startsWith("foot")) {
+                updateFixtures(fb, false, function() {
+                    var getKeyBoard = function() {
+                        var countries = football.getCountries(fixtures.data);
+                        var countries = countries.sort();
+                        var width = 3;
+                        var arr = [[]];
+                        var lineCount = 0;
+                        var wCount = 0;
+                        countries.forEach(function(el, index){
+                            if(wCount === width){
+                                lineCount++;
+                                wCount = 0;
+                                arr.push([]);
+                            }
+                            else if(wCount <= width){
+                                arr[lineCount].push({
+                                    text: el,
+                                    callback_data: el
+                                });
+                                wCount++;
+                            }
+                        });
+
+                        return arr;
+                    };
+                    var answers = [{
+                        type: 'article',
+                        input_message_content: {
+                            message_text: football.getMessage(fixtures.data, "all"),
+                            parse_mode: "html"
+                        },
+                        title: "All finished matches"
+                    }, {
+                        type: 'article',
+                        input_message_content: {
+                            message_text: football.getMessage(fixtures.data, "upcoming"),
+                            parse_mode: "html"
+                        },
+                        title: "All upcoming matches"
+                    }, {
+                        type: 'article',
+                        input_message_content: {
+                            message_text: "Upcoming matches by country"
+                        },
+                        title: "Upcoming matches by country",
+                        reply_markup: {
+                            inline_keyboard: getKeyBoard(),
+                            selective: true
+                        }
+                    }];
+                    tg.answerInlineQuery($.id, answers, {
+                        cache_time: 10
+                    });
+                });
             }
+        });
+
+        tg.callbackQueries(($) => {
+            var a = football.getMessage(fixtures.data, "upcoming", $.data);
+            custom.editMessage($.inline_message_id,
+                football.getMessage(fixtures.data, "upcoming", $.data));
         });
 
         tg.controller('HaroldController', ($) => {
@@ -105,36 +188,32 @@ var _bot = {
         tg.controller('FootController', ($) => {
             on_request($.message);
             tg.for('/foot :option', ($) => {
-                fb.getLeagugeFixtures(424).then(function(res) {
-                    $.sendMessage(football.getMessage(res, $.query.option), {
+                updateFixtures(fb, false, function() {
+                    $.sendMessage(football.getMessage(fixtures.data, $.query.option), {
                         parse_mode: "html"
                     });
-                }).catch(function(err) {
-                    console.log(err);
                 });
             });
             tg.for('/foot :option :opt', ($) => {
                 on_request($.message);
-                fb.getLeagugeFixtures(424).then(function(res) {
-                    $.sendMessage(football.getMessage(res, $.query.option, $.query.opt), {
+                updateFixtures(fb, false, function() {
+                    $.sendMessage(football.getMessage(fixtures.data, $.query.option, $.query.opt), {
                         parse_mode: "html"
                     });
                 });
             });
             tg.for('/foot@isthisavailablebot :option', ($) => {
                 on_request($.message);
-                fb.getLeagugeFixtures(424).then(function(res) {
-                    $.sendMessage(football.getMessage(res, $.query.option), {
+                updateFixtures(fb, false, function() {
+                    $.sendMessage(football.getMessage(fixtures.data, $.query.option), {
                         parse_mode: "html"
                     });
-                }).catch(function(err) {
-                    console.log(err);
                 });
             });
             tg.for('/foot@isthisavailablebot :option :opt', ($) => {
                 on_request($.message);
-                fb.getLeagugeFixtures(424).then(function(res) {
-                    $.sendMessage(football.getMessage(res, $.query.option, $.query.opt), {
+                updateFixtures(fb, false, function() {
+                    $.sendMessage(football.getMessage(fixtures.data, $.query.option, $.query.opt), {
                         parse_mode: "html"
                     });
                 });

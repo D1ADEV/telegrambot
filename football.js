@@ -120,6 +120,20 @@ var _football = {
             toReturn += _getAllMatchesString(match);
         }
         return toReturn;
+    },
+
+    getCountries: function(res){
+
+        var countryArray = [];
+        res.fixtures.forEach(function(el, index){
+            if(countryArray.indexOf(el.homeTeamName) === -1){
+                countryArray.push(el.homeTeamName);
+            }
+            if(countryArray.indexOf(el.awayTeamName) === -1){
+                countryArray.push(el.awayTeamName);
+            }
+        });
+        return countryArray;
     }
 }
 

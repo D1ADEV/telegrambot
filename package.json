@@ -19,7 +19,6 @@
   "dependencies": {
     "country-data": "0.0.24",
     "emoji-flag": "^1.1.0",
-    "jslint": "^0.10.1",
     "levenshtein": "^1.0.5",
     "node-football-data": "^0.1.2",
     "random-words": "0.0.1",
